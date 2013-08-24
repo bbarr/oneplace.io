@@ -26,7 +26,6 @@ module.exports = {
   },
 
   tryApi: function(i, place, props, cb) {
-    console.log(place);
     if (!apis[i]) return cb({ error: 'no more apis to try!' });
 
     apis[i].fetch(props, place, function(updatedPlace) {
