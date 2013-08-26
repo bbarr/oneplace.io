@@ -19,7 +19,7 @@ module.exports = {
           currentPlace[prop] = this.getters[prop](match); 
           return currentPlace;
         }.bind(this), place);
-      cb(null, resolved);
+      cb(resolved);
     }.bind(this));
   },
 
