@@ -10,16 +10,16 @@ module.exports = {
     }
   },
 
-  fetch: function(props, place, cb) {
-    this.driver().get('/t/places/' + place.id, function (error, res) {
+  fetch: function(place, props, cb) {
+    this.driver().get('/t/places/' + place.sourceId, function (error, res) {
       var match = res.data[0];
       var resolved = props
         .filter(function(prop) { return this.getters[prop]; }, this)
         .reduce(function(currentPlace, prop) { 
-          currentPlace[prop] = this.getters[prop](match); 
+          currentPlace[prop] = { value: this.getters[prop](match), source: 'factual' }; 
           return currentPlace;
-        }.bind(this), place);
-      cb(resolved);
+        }.bind(this), {});
+      cb(_.extend(place, resolved));
     }.bind(this));
   },
 

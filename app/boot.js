@@ -6,19 +6,23 @@ var composer = require('./composer');
 var app = express();
 
 app.use(express.bodyParser());
+app.use(function(req, res, next) {
+  next();
+});
 
-app.get('/details/:id', function(req, res) {
+function respond(req, res, e, data) {
+  if (e) {
+    res.send(500, { error: e });
+  } else {
+    res.send(data);
+  }
+}
 
-  var id = req.param('id');
+app.get('/places/:source/:sourceId', function(req, res) {
+  var source = req.param('source') || 'factual';
+  var sourceId = req.param('sourceId');
   var props = _.csvToArray(req.param('props'));
-
-  composer.compose(id, props, function(e, place) {
-    if (e) {
-      res.send(500, { error: e });
-    } else {
-      res.send(place);
-    }
-  });
+  composer.compose(source, sourceId, props, respond.bind(null, req, res));
 });
 
 app.listen(process.env.PORT || 3000);

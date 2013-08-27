@@ -5,8 +5,25 @@ var cache = {};
 
 module.exports = {
 
-  newPlace: function(id) {
-    return { id: id };
+  joinId: function(source, sourceId) {
+    return source + '_' + sourceId;
+  },
+
+  splitId: function(id) {
+    return id.split('_');
+  },
+
+  newPlace: function(id, cb) {
+    var parts = this.splitId(id);
+    this.getCrosswalk(id, function(cw) {
+      var place = { id: id, source: parts[0], sourceId: parts[1], cw: cw };
+      cb(place);
+    });
+  },
+
+  getCrosswalk: function(id, cb) {
+    var parts = this.splitId(id);
+    cb({ foursquare: '4c3e3a7cb8b4be9aaad9cbef' });
   },
 
   missingProps: function(place, props) {
@@ -17,18 +34,24 @@ module.exports = {
     return _.isEmpty(this.missingProps(place, props));
   },
 
-  cache: function(k, v) {
-    if (_.isUndefined(v)) {
-      return cache[k] || (cache[k] = this.newPlace(k));
+  cache: function(id, place, cb) {
+    if (_.isFunction(place)) {
+      var realCb = place;
+      if (cache[id]) {
+        cb(cache[id]);
+      } else {
+        cache[id] = this.newPlace(id, realCb);
+      }
     } else {
-      return cache[k] = v;
+      cache[id] = place;
+      cb(cache[id]);
     }
   },
 
   tryApi: function(i, place, props, cb) {
     if (!apis[i]) return cb({ error: 'no more apis to try!' });
 
-    apis[i].fetch(props, place, function(updatedPlace) {
+    apis[i].fetch(place, props, function(updatedPlace) {
       this.nextStep(i + 1, updatedPlace, props, cb);
     }.bind(this));
   },
@@ -42,8 +65,10 @@ module.exports = {
     }
   },
 
-  compose: function(id, props, cb) {
-    var place = this.cache(id);
-    this.nextStep(0, place, props, cb);
+  compose: function(source, sourceId, props, cb) {
+    var id = this.joinId(source, sourceId);
+    this.cache(id, function(place) {
+      this.nextStep(0, place, props, cb);
+    }.bind(this));
   }
 }
