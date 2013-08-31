@@ -1,28 +1,26 @@
 var express = require('express');
+var passport = require('passport');
 var _ = require('lodash');
-_.mixin(require('./util'));
-var composer = require('./composer');
+
+// utils
+_.mixin({
+  uberPartial: function(fn) {
+    var argTemplate = [].slice.call(arguments, 1);
+    return function() {
+      var args = [].slice.call(arguments);
+      var combinedArgs = argTemplate.map(function(arg, i) { 
+        if (typeof arg !== 'string') return arg;
+        var match = arg.match(/^arg(\d+)$/);
+        return (match) ? args[match[1]] : arg; 
+      });
+      return fn.apply(this, combinedArgs);
+    };
+  }
+});
 
 var app = express();
+require('./middleware')(app);
+require('./routes')(app);
 
-app.use(express.bodyParser());
-app.use(function(req, res, next) {
-  next();
-});
-
-function respond(req, res, e, data) {
-  if (e) {
-    res.send(500, { error: e });
-  } else {
-    res.send(data);
-  }
-}
-
-app.get('/places/:source/:sourceId', function(req, res) {
-  var source = req.param('source') || 'factual';
-  var sourceId = req.param('sourceId');
-  var props = _.csvToArray(req.param('props'));
-  composer.compose(source, sourceId, props, respond.bind(null, req, res));
-});
-
+// and go!
 app.listen(process.env.PORT || 3000);
