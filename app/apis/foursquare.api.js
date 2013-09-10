@@ -1,5 +1,7 @@
 var foursquare = require('foursquarevenues');
 var _ = require('lodash');
+var rsvp = require('rsvp');
+var moment = require('moment');
 
 module.exports = {
 
@@ -11,24 +13,78 @@ module.exports = {
 
     mayor: function(data) {
       return data.mayor;
-    }
+    },
+
+    menu: function(data) {
+      return data.menu;
+    },
+
+    hours: function(data) {
+      return data.hours;
+    },
+
+    photos: function(data, options) {
+      return data.photos;
+    },
+
+    price: function(data) {
+      return data.price;
+    },
+
+    rating: function(data) {
+      return data.rating;
+    },
   },
 
-  fetch: function(place, props, cb) {
-    this.driver().getVenue({ venue_id: place.cw.foursquare }, function(e, data) {
-      var match = data.response.venue;
-      var resolved = props
-        .filter(function(prop) { return this.getters[prop]; }, this)
-        .reduce(function(currentPlace, prop) { 
-          currentPlace[prop] = { value: this.getters[prop](match), source: 'foursquare' }
-          return currentPlace;
-        }.bind(this), {});
-      cb(_.extend(place, resolved));
+  match: function(config) {
+    var place = config.sourcePlace;
+    var keys = config.user.keys['foursquare'];
+    var name = place.name;
+    var latlng = place.latitude + ',' + place.longitude;
+    return new rsvp.Promise(function(resolve, reject) {
+      this.driver(keys.id, keys.secret).getVenues({ ll: latlng, query: name, intent: 'match' }, function(e, data) {
+        if (e || data.response.venues.length === 0) {
+          resolve({});
+        } else {
+          resolve({ foursquare: data.response.venues[0].id });
+        }
+      });
     }.bind(this));
   },
 
-  driver: _.memoize(function() {
-    return foursquare('BERQYYI1HCLFYVPG504AGDCXL00TXNJLQBGXEFWXZNDLOCJS', 'UMCC15GPWCMX4EN20EJ5L45DOVYFHC44W34CYSB3V4QAYWHH')
+  populate: function(config, existing, data) {
+    var place = existing;
+    var resolved = config.props
+      .filter(function(prop) {
+        return !place[prop] && this.getters[prop];
+      }, this)
+      .reduce(function(currentPlace, prop) { 
+
+        var value = this.getters[prop](data);
+        if (typeof value === 'undefined') return currentPlace;
+
+        var currentPlaceClone = _.clone(currentPlace);
+        currentPlaceClone[prop] = { 
+          value: value, 
+          source: 'foursquare',
+          expires: moment().add('days', 2).format()
+        }; 
+        return currentPlaceClone;
+      }.bind(this), place);
+    return resolved;
+  },
+
+  fetch: function(config, id) {
+    var keys = config.user.keys.foursquare;
+    return new rsvp.Promise(function(resolve, reject) {
+      this.driver(keys.id, keys.secret).getVenue({ venue_id: id }, function(e, data) {
+        if (e) reject(e);
+        else resolve(data.response.venue);
+      });
+    }.bind(this));
+  },
+
+  driver: _.memoize(function(key, secret) {
+    return foursquare(key, secret)
   })
 }
-

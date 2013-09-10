@@ -27,7 +27,6 @@ var clientLib = {
   },
 
   verify: function(client, verifyCode, cb) {
-    console.log('verifying with: ', client, verifyCode, cb)
     this.collection(function(clients) {
       clients.update({ id: client.id, verifyCode: verifyCode }, { $set: { verified: true } }, { safe: true }, cb);
     });
