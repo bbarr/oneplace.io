@@ -1,9 +1,9 @@
 
 var mongo = require('mongodb');
-var db = require('../util/db')
-var collection = db.collection('places');
 var rsvp = require('rsvp');
 var _ = require('lodash');
+var db = require('../util/db')
+var collection = db.collection('places');
 
 module.exports = {
   
@@ -17,12 +17,7 @@ module.exports = {
   find: function(config) {
     return new rsvp.Promise(function(resolve, reject) {
       return collection(function(coll) {
-        var query;
-        if (config.references) {
-          query = { referenceId: config.references._id };
-        } else {
-          query = { _id: new mongo.ObjectID(config.id) };
-        }
+        var query = config.references ? { referenceId: config.references._id } : { _id: new mongo.ObjectID(config.id) };
         coll.find(query).nextObject(function(e, doc) {
           return doc ? resolve(doc) : reject(e);
         });
@@ -43,9 +38,8 @@ module.exports = {
   save: function(config, place) {
     return rsvp.Promise(function(resolve, reject) {
       collection(function(coll) {
-        var updaterPlace = _.object(_.reject(_.pairs(place), function(pair) { return pair[1] && !pair[1].source; }));
         var oid = new mongo.ObjectID(place._id.toString());
-        coll.update({ _id: oid }, { $set: updaterPlace }, { safe: true }, function(e, doc) {
+        coll.update({ _id: oid }, { $set: place }, { safe: true }, function(e, doc) {
           e ? reject(e) : resolve(/^\d+$/.test(doc) ? place : doc);
         });
       });

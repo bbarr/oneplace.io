@@ -17,12 +17,7 @@ module.exports = {
   find: function(config) {
     return new rsvp.Promise(function(resolve, reject) {
       collection(function(coll) {
-        var query;
-        if (config.sourceId) {
-          query = db.arrayToQuery([ [ config.source, config.sourceId ] ]);
-        } else {
-          query = { _id: new mongo.ObjectID(config.id.toString()) };
-        }
+        var query = config.sourceId ? _.object([ [ config.source, config.sourceId ] ]) : { _id: new mongo.ObjectID(config.id.toString()) };
         coll.find(query).nextObject(function(e, doc) {
           doc ? resolve(doc) : reject(e);
         });
@@ -31,9 +26,7 @@ module.exports = {
   },
 
   create: function(config) {
-
     var matching = _.map(config.apis, function(api) { return api.match(config); });
-
     return rsvp.all(matching)
       .then(function(references) {
         var mergedRefs = _.merge.apply(_, references);

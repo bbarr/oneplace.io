@@ -101,9 +101,11 @@ module.exports = {
     return _.filter(_.pairs(apis), function(pair) { return refs[pair[0]]; });
   },
 
-  build: function(givenConfig) {
+  build: function(config) {
+
     var config = _.clone(givenConfig);
     config.apis = _.object(this.filterApis(apis, config.user.keys));
+
     return apis[config.source].fetch(config, config.sourceId)
       .then(function(sourcePlace) {
         return references.findOrCreate(_.extend(config, { sourcePlace: sourcePlace }));
