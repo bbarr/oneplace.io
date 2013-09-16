@@ -4,6 +4,8 @@ var collection = db.collection('clients');
 
 var clientLib = {
 
+  collection: collection,
+
   sanitize: function(client) {
     return {
       email: client.email,
