@@ -1,5 +1,6 @@
 
-var mongo = require('mongodb').MongoClient;
+var db = require('util/db');
+var collection = db.collection('clients');
 
 var clientLib = {
 
@@ -10,25 +11,12 @@ var clientLib = {
     }
   },
 
-  driver: (function() {
-    var cachedDriver;
-    return function(cb) {
-      if (cachedDriver) return cb(cachedDriver);
-      mongo.connect(process.env.MONGO_URL || 'mongodb://localhost:27017/oneplace', function(err, db) {
-        cb(cachedDriver = db);
-      });
-    };
-  })(),
-
-  collection: function(cb) {
-    this.driver(function(db) {
-      cb(db.collection('clients'));
-    });
-  },
-
   verify: function(client, verifyCode, cb) {
-    this.collection(function(clients) {
-      clients.update({ id: client.id, verifyCode: verifyCode }, { $set: { verified: true } }, { safe: true }, cb);
+    collection(function(clients) {
+      clients.update({ 
+        id: client.id, 
+        verifyCode: verifyCode 
+      }, { $set: { verified: true } }, { safe: true }, cb);
     });
   },
 
@@ -42,7 +30,7 @@ var clientLib = {
       verifyCode: '123'
     };
 
-    this.collection(function(clients) {
+    collection(function(clients) {
       clients.insert(client, { safe: true }, function(e, docs) {
         cb(e, (docs ? docs[0] : docs));
       });
@@ -56,10 +44,11 @@ var clientLib = {
       keys: data.keys || client.keys
     };
 
-    this.collection(function(clients) {
+    collection(function(clients) {
       clients.update({ id: client.id }, { $set: changes }, { safe: true }, cb)
     });
   }
 };
 
 module.exports = clientLib;
+
