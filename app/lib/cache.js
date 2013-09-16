@@ -1,6 +1,13 @@
 
 var rsvp = require('rsvp');
-var redis = require("redis");
+
+var redis;
+if (process.env.REDISTOGO_URL) {
+  redis = require('redis-url').connect(process.env.REDISTOGO_URL);
+} else {
+  redis = require('redis');
+}
+
 var client = redis.createClient();
 
 module.exports = {

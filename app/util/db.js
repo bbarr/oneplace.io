@@ -3,7 +3,7 @@ var mongo = require('mongodb').MongoClient;
 var rsvp = require('rsvp');
 
 var driver = new rsvp.Promise(function(resolve, reject) {
-  mongo.connect(process.env.MONGO_URL || 'mongodb://localhost:27017/oneplace', function(err, db) {
+  mongo.connect(process.env.MONGOHQ_URI || 'mongodb://localhost:27017/oneplace', function(err, db) {
     err ? reject(err) : resolve(db)
   });
 });

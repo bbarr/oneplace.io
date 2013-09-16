@@ -9,10 +9,11 @@
     "factual-api": "1.0.x",
     "async": "0.2.9",
     "foursquarevenues": "0.0.x",
-    "mongodb": "1.3.x",
+    "mongodb": "1.1.11",
     "passport": "0.1.x",
     "rsvp": "2.0.2",
     "moment": "x.x.x",
-    "redis": "x.x.x"
+    "redis": "x.x.x",
+    "redis-url": "0.1.0"
   }
 }
