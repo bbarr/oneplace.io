@@ -9,7 +9,7 @@
     "factual-api": "1.0.x",
     "async": "0.2.9",
     "foursquarevenues": "0.0.x",
-    "mongodb": "1.1.11",
+    "mongodb": "1.x.x",
     "passport": "0.1.x",
     "rsvp": "2.0.2",
     "moment": "x.x.x",
