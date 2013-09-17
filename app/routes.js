@@ -36,21 +36,13 @@ module.exports = function(app) {
 
   var requireClientKey = passport.authenticate('client-key');
 
-  app.get('/foo', requireClientKey, function(req, res) {
-    res.send('HIIII');
-  });
-
   app.get('/places/:source', requireClientKey, function(req, res) {
     
-    console.log('WTF in route')
     var ids = req.param('ids').split(',');
     var props = req.param('props').split(',');
 
-    console.log('ids', ids);
-    console.log('props', props);
     var response = flexResponse(res);
 
-    console.log(req.user)
     var promises = ids.map(function(id) {
       return composite.build({ 
         user: req.user, 
