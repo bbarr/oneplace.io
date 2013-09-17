@@ -72,9 +72,12 @@ module.exports = {
       };
 
       // now try all the APIs, resolving ASAP when the props are fulfilled
+      var now = Date.now();
+      console.log('before fetching ', now)
       var fetches = apisWithoutSource.map(function(pair) { 
         return pair[1].fetch(config, config.references[pair[0]])
           .then(function(place) {
+            console.log('after fetching api: ', pair, Date.now())
             composite.mixin(pair[1].populate(config, composite.value(), place))
             if (composite.isResolved()) {
               resolve(composite.value(true));
