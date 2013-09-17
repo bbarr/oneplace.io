@@ -1,6 +1,7 @@
 
 var db = require('./util/db');
 var collection = db.collection('clients');
+console.log('HERE IS THE COLLECTIN', collection)
 
 var clientLib = {
 

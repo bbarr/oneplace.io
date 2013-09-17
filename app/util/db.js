@@ -11,6 +11,7 @@ var driver = new rsvp.Promise(function(resolve, reject) {
 function collection(name, cb) {
   console.log('name and cb', name, cb)
   return driver.then(function(db) {
+    console.log('inside of driver', db)
     return cb(db.collection(name))
   });
 };
