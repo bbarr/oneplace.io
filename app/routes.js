@@ -43,9 +43,8 @@ module.exports = function(app) {
 
     var response = flexResponse(res);
 
-    console.log('looking for ids', ids)
-    var promises = ids.map(function(id) {
-      console.log('id', id)
+    console.log('looking for ids', _.compact(ids))
+    var promises = _.compact(ids).map(function(id) {
       return composite.build({ 
         user: req.user, 
         source: req.param('source'),
