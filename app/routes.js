@@ -43,7 +43,9 @@ module.exports = function(app) {
 
     var response = flexResponse(res);
 
+    console.log('looking for ids', ids)
     var promises = ids.map(function(id) {
+      console.log('id', id)
       return composite.build({ 
         user: req.user, 
         source: req.param('source'),
@@ -53,8 +55,10 @@ module.exports = function(app) {
     });
 
     rsvp.all(promises).then(function(composites) {
+      console.log('composites in routes', composites);
       response(null, fixIds(composites));
     }, function(error) {
+      console.log('error in routes', error);
       response(error);
     });
   });
