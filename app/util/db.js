@@ -9,6 +9,7 @@ var driver = new rsvp.Promise(function(resolve, reject) {
 });
 
 function collection(name, cb) {
+  console.log('name and cb', name, cb)
   return driver.then(function(db) {
     return cb(db.collection(name))
   });
@@ -24,6 +25,7 @@ module.exports = {
   },
   
   collection: function(name) {
+    console.log('returing bound collection for ', name)
     return collection.bind(null, name);
   }
 }
