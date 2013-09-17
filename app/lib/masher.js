@@ -80,14 +80,19 @@ module.exports = {
           .then(function(place) {
             console.log('after fetching api: ', pair, Date.now())
             composite.mixin(pair[1].populate(config, composite.value(), place))
+            console.log('resolved? ', composite.isResolved())
             if (composite.isResolved()) {
               resolve(composite.value(true));
             }
+            return place;
           }.bind(this));
       }, this);
 
       // we couldnt fullfil the props with the API's available, just return what we've got
       rsvp.all(fetches).then(function(places) {
+        resolve(composite.value(true));
+      }, function(e) {
+        console.log('all fetches errored', e); 
         resolve(composite.value(true));
       });
     }.bind(this));
