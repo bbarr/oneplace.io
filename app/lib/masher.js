@@ -74,7 +74,11 @@ module.exports = {
 
       // now try all the APIs, resolving ASAP when the props are fulfilled
       var now = Date.now();
-      console.log('before fetching ', now)
+      console.log('before fetching ', now, 'from apisWithoutSource', apisWithoutSource)
+      if (!apisWithoutSource.length) {
+        return resolve(composite.value(true));
+      }
+
       var fetches = apisWithoutSource.map(function(pair) { 
         console.log('fetching ', pair)
         return pair[1].fetch(config, config.references[pair[0]])
