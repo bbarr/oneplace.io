@@ -76,6 +76,7 @@ module.exports = {
       var now = Date.now();
       console.log('before fetching ', now)
       var fetches = apisWithoutSource.map(function(pair) { 
+        console.log('fetching ', pair)
         return pair[1].fetch(config, config.references[pair[0]])
           .then(function(place) {
             console.log('after fetching api: ', pair, Date.now())
