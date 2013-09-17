@@ -76,7 +76,9 @@ module.exports = {
       var now = Date.now();
       console.log('before fetching ', now, 'from apisWithoutSource', apisWithoutSource)
       if (!apisWithoutSource.length) {
-        return resolve(composite.value(true));
+        var result = composite.value(true);
+        console.log('result ', result)
+        return resolve(result);
       }
 
       var fetches = apisWithoutSource.map(function(pair) { 
