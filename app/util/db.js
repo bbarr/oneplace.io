@@ -6,6 +6,7 @@ var driver = new rsvp.Promise(function(resolve, reject) {
   console.log(process.env)
   console.log(process.env.MONGOHQ_URL)
   mongo.connect(process.env.MONGOHQ_URL || 'mongodb://localhost:27017/oneplace', function(err, db) {
+    console.log('DB', db)
     err ? reject(err) : resolve(db)
   });
 });
