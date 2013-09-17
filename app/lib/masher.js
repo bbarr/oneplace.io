@@ -59,6 +59,7 @@ module.exports = {
 
   compose: function(config) {
 
+    console.log('composing', config);
     var initialPlace = _.find(config.apis, function(pair) { return pair[0] === config.source })[1].populate(config, config.place, config.sourcePlace);
     var apisWithoutSource = _.reject(config.apis, function(pair) { return pair[0] === config.source; });
 
