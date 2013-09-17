@@ -46,6 +46,7 @@ module.exports = function(app) {
     console.log('props', props);
     var response = flexResponse(res);
 
+    return response(null, [ 'yay!' ])
     console.log(req.user)
     var promises = ids.map(function(id) {
       return composite.build({ 
