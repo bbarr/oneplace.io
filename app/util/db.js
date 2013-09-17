@@ -13,7 +13,7 @@ function collection(name, cb) {
   return driver.then(function(db) {
     console.log('inside of driver', db)
     return cb(db.collection(name))
-  });
+  }, function(e) { console.log('error', e) });
 };
 
 module.exports = {
