@@ -102,12 +102,15 @@ module.exports = {
     config.apis = _.object(this.filterApis(apis, config.user.keys));
     return apis[config.source].fetch(config, config.sourceId)
       .then(function(sourcePlace) {
+        console.log('finding or creating references')
         return references.findOrCreate(_.extend(config, { sourcePlace: sourcePlace }));
       })
       .then(function(refs) {
+        console.log('finding or creating places')
         return places.findOrCreate(_.extend(config, { references: refs, apis: this.filterApis(apis, refs) }));
       }.bind(this))
       .then(function(place) {
+        console.log('composing')
         return this.compose(_.extend(config, { place: place }))
       }.bind(this))
       .then(function(composed) {
