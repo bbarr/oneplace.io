@@ -16,7 +16,7 @@ ClientKeyStrategy.prototype.authenticate = function(req, options) {
   var authHash = req.param('authHash');
   var timestamp = req.param('timestamp');
 
-  clientLib.collection(function(clients) {
+  clientLib.collection().then(function(clients) {
     clients.find({ publicKey: publicKey }).nextObject(function(e, client) {
       if (!client) return this.fail();
       if (!crypto.createHash('md5').update(timestamp, client.privateKey).digest('hex') === authHash) return this.fail();
@@ -25,4 +25,5 @@ ClientKeyStrategy.prototype.authenticate = function(req, options) {
     }.bind(this));
   }.bind(this));
 };
+
 module.exports = ClientKeyStrategy;
