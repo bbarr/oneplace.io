@@ -36,6 +36,10 @@ module.exports = function(app) {
 
   var requireClientKey = passport.authenticate('client-key');
 
+  app.get('/foo', function(req, res) {
+    res.send('HIIII');
+  });
+
   app.get('/places/:source', requireClientKey, function(req, res) {
     
     console.log('WTF in route')
