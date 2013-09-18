@@ -112,20 +112,13 @@ module.exports = {
 
           var keys = config.user.keys.factual;
 
-          this.driver(keys.key, keys.secret).get('/t/restaurants/' + id, function(error, res) {
-            if (error) {
-              this.driver(keys.key, keys.secret).get('/t/places-edge/' + id, function (error, res) {
-                if (res && res.data) {
-                  cache.set(id, res.data[0]).then(resolve.bind(null, res.data[0]));
-                }
-                else reject(error);
-              });
-            } else {
-              if (res && res.data) {
-                cache.set(id, res.data[0]).then(resolve.bind(null, res.data[0]));
-              }
+          this.driver(keys.key, keys.secret).get('/t/places-edge/' + id, function (error, res) {
+            if (res && res.data) {
+              cache.set(id, res.data[0]).then(resolve.bind(null, res.data[0]));
             }
-          }.bind(this));
+            else reject(error);
+          });
+            
 
         }.bind(this));
       }.bind(this));
