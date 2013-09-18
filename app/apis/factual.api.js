@@ -108,7 +108,7 @@ module.exports = {
     return cache.get(id)
       .then(function(cached) {
         return new rsvp.Promise(function(resolve, reject) {
-          if (cached) return resolve(cached);
+          if (false && cached) return resolve(cached);
 
           var keys = config.user.keys.factual;
 
