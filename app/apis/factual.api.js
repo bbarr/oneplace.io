@@ -29,7 +29,9 @@ module.exports = {
     },
 
     hours: function(data) {
-      return data.hours || data.hours_display;
+      var hours = (data.hours || data.hours_display);
+      if (!hours) return;
+      return _.values(JSON.parse(hours));
     },
 
     categories: function(data) {
@@ -82,7 +84,8 @@ module.exports = {
     var place = existing;
     var resolved = config.props
       .filter(function(prop) {
-        return !place[prop] && this.getters[prop];
+        // add check for existing here sometime later... using expire to invalidate
+        return this.getters[prop];
       }, this)
       .reduce(function(currentPlace, prop) { 
 
@@ -111,7 +114,7 @@ module.exports = {
 
           this.driver(keys.key, keys.secret).get('/t/restaurants/' + id, function(error, res) {
             if (error) {
-              this.driver(keys.key, keys.secret).get('/t/places/' + id, function (error, res) {
+              this.driver(keys.key, keys.secret).get('/t/places-edge/' + id, function (error, res) {
                 if (res && res.data) {
                   cache.set(id, res.data[0]).then(resolve.bind(null, res.data[0]));
                 }

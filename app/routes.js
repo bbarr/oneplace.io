@@ -43,7 +43,6 @@ module.exports = function(app) {
 
     var response = flexResponse(res);
 
-    console.log('looking for ids', _.compact(ids))
     var promises = _.compact(ids).map(function(id) {
       return composite.build({ 
         user: req.user, 
@@ -54,10 +53,8 @@ module.exports = function(app) {
     });
 
     rsvp.all(promises).then(function(composites) {
-      console.log('composites in routes', composites);
       response(null, fixIds(composites));
     }, function(error) {
-      console.log('error in routes', error);
       response(error);
     });
   });

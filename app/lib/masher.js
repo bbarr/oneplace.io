@@ -45,7 +45,6 @@ module.exports = {
 
         function digits(str) { return str ? str.replace(/\D/g, '') : Infinity }
         var cacheSummary = expiries.reduce(function(earliest, expiry) { return digits(expiry) < digits(earliest) ? expiry : earliest; });
-        console.log(cacheSummary)
 
         this.mixin({ cacheSummary: cacheSummary });
       },
@@ -59,7 +58,6 @@ module.exports = {
 
   compose: function(config) {
 
-    console.log('composing', config);
     var initialPlace = _.find(config.apis, function(pair) { return pair[0] === config.source })[1].populate(config, config.place, config.sourcePlace);
     var apisWithoutSource = _.reject(config.apis, function(pair) { return pair[0] === config.source; });
 
@@ -74,20 +72,15 @@ module.exports = {
 
       // now try all the APIs, resolving ASAP when the props are fulfilled
       var now = Date.now();
-      console.log('before fetching ', now, 'from apisWithoutSource', apisWithoutSource)
       if (!apisWithoutSource.length) {
         var result = composite.value(true);
-        console.log('result ', result)
         return resolve(result);
       }
 
       var fetches = apisWithoutSource.map(function(pair) { 
-        console.log('fetching ', pair)
         return pair[1].fetch(config, config.references[pair[0]])
           .then(function(place) {
-            console.log('after fetching api: ', pair, Date.now())
             composite.mixin(pair[1].populate(config, composite.value(), place))
-            console.log('resolved? ', composite.isResolved())
             if (composite.isResolved()) {
               resolve(composite.value(true));
             }
@@ -99,7 +92,6 @@ module.exports = {
       rsvp.all(fetches).then(function(places) {
         resolve(composite.value(true));
       }, function(e) {
-        console.log('all fetches errored', e); 
         resolve(composite.value(true));
       });
     }.bind(this));
@@ -114,15 +106,12 @@ module.exports = {
     config.apis = _.object(this.filterApis(apis, config.user.keys));
     return apis[config.source].fetch(config, config.sourceId)
       .then(function(sourcePlace) {
-        console.log('finding or creating references')
         return references.findOrCreate(_.extend(config, { sourcePlace: sourcePlace }));
       })
       .then(function(refs) {
-        console.log('finding or creating places')
         return places.findOrCreate(_.extend(config, { references: refs, apis: this.filterApis(apis, refs) }));
       }.bind(this))
       .then(function(place) {
-        console.log('composing')
         return this.compose(_.extend(config, { place: place }))
       }.bind(this))
       .then(function(composed) {
