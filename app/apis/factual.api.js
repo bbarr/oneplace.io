@@ -108,17 +108,24 @@ module.exports = {
     return cache.get(id)
       .then(function(cached) {
         return new rsvp.Promise(function(resolve, reject) {
-          if (false && cached) return resolve(cached);
+          if (cached) return resolve(cached);
 
           var keys = config.user.keys.factual;
 
-          this.driver(keys.key, keys.secret).get('/t/places-edge/' + id, function (error, res) {
-            if (res && res.data) {
-              cache.set(id, res.data[0]).then(resolve.bind(null, res.data[0]));
+          this.driver(keys.key, keys.secret).get('/t/restaurants/' + id, function(error, res) {
+            if (error) {
+              this.driver(keys.key, keys.secret).get('/t/places-edge/' + id, function (error, res) {
+                if (res && res.data) {
+                  cache.set(id, res.data[0]).then(resolve.bind(null, res.data[0]));
+                }
+                else reject(error);
+              });
+            } else {
+              if (res && res.data) {
+                cache.set(id, res.data[0]).then(resolve.bind(null, res.data[0]));
+              }
             }
-            else reject(error);
-          });
-            
+          }.bind(this));
 
         }.bind(this));
       }.bind(this));
