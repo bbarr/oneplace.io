@@ -20,7 +20,7 @@ module.exports = {
     },
 
     hours: function(data) {
-      return data.hours;
+      console.log('foursquare ', data) return data.hours;
     },
 
     photos: function(data, options) {

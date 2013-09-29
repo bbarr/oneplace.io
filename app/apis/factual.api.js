@@ -114,7 +114,7 @@ module.exports = {
 
           this.driver(keys.key, keys.secret).get('/t/restaurants/' + id, function(error, res) {
             if (error) {
-              this.driver(keys.key, keys.secret).get('/t/places-edge/' + id, function (error, res) {
+              this.driver(keys.key, keys.secret).get('/t/places/' + id, function (error, res) {
                 if (res && res.data) {
                   cache.set(id, res.data[0]).then(resolve.bind(null, res.data[0]));
                 }
