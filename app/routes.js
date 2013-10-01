@@ -1,9 +1,10 @@
 
 var passport = require('passport');
-var composite = require('./lib/masher');
-var client = require('./client');
+var composer = require('./lib/composer');
+var client = require('./lib/client');
 var rsvp = require('rsvp');
 var _ = require('lodash');
+
 var requireClientKey = passport.authenticate('client-key');
 var flexResponse = (function() {
   function respond(res, e, data, status) {
@@ -17,19 +18,15 @@ var flexResponse = (function() {
 
 module.exports = function(app) {
 
-  app.get('/places/:source', requireClientKey, function(req, res) {
-    
-    var ids = req.param('ids').split(',');
-    var props = req.param('props').split(',');
+  app.get('/things', requireClientKey, function(req, res) {
+
+    var source = req.param('source');
+    var ids = req.param('ids');
+    var props = req.param('props');
     var response = flexResponse(res);
 
     var builds = ids.map(function(id) {
-      return composite.build({ 
-        user: req.user, 
-        source: req.param('source'),
-        sourceId: id,
-        props: props
-      });
+      return composer.compose(req.user, source, id, props);
     });
 
     rsvp.all(builds).then(function(composites) {

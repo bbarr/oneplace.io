@@ -2,7 +2,7 @@
 var passport = require('passport');
 var util = require('util');
 var crypto = require('crypto');
-var clientLib = require('./client');
+var clientLib = require('./lib/client');
 
 function ClientKeyStrategy() { 
   this.name = 'client-key'; 

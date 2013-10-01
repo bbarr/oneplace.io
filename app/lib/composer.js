@@ -8,6 +8,10 @@ var moment = require('moment');
 
 module.exports = {
 
+  failedPromise: function() {
+    return new rsvp.Promise(function(res, rej) { rej(); });
+  },
+
   freshen: function(place) {
     var now = moment();
     return _.object(_.reject(_.pairs(place), function(pair) {
@@ -97,30 +101,27 @@ module.exports = {
     }.bind(this));
   },
 
-  filterApis: function(apis, refs) {
-    return _.filter(_.pairs(apis), function(pair) { return refs[pair[0]]; });
+  usableApis: function(user) {
+    return _.object(_.filter(_.pairs(apis), function(pair) { return user.keys[pair[0]]; }));
   },
 
-  build: function(config) {
+  compose: function(user, source, sourceId, props) {
 
-    var config = _.clone(givenConfig);
-    config.apis = _.object(this.filterApis(apis, config.user.keys));
+    var usableApis = this.usableApis(user);
 
-    return apis[config.source].fetch(config, config.sourceId)
-      .then(function(sourcePlace) {
-        return references.findOrCreate(_.extend(config, { sourcePlace: sourcePlace }));
-      })
-      .then(function(refs) {
-        return places.findOrCreate(_.extend(config, { references: refs, apis: this.filterApis(apis, refs) }));
-      }.bind(this))
-      .then(function(place) {
-        return this.compose(_.extend(config, { place: place }))
-      }.bind(this))
-      .then(function(composed) {
-        return places.save(config, composed);
-      })
-      .fail(function(e) {
-        console.log('FAILLLL', e);
-      });
+    var sourceApi = usableApis[config.source];
+    if (!sourceApi) return this.failedPromise();
+    
+    var fetchingThing = sourceApi.fetch(sourceId);
+
+    var makingReferences = fetchingThing.then(function(thing) {
+      return this.makeReferences(thing);
+    }.bind(this));
+
+    var populatingThing = makingReferences.then(function(references) {
+      return this.populate(thing, props, references);
+    }.bind(this));
+
+    return populatingThing;
   }
 }
