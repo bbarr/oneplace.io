@@ -1,5 +1,5 @@
 
-var db = require('util/db');
+var db = require('../util/db');
 var collection = db.collection('clients');
 
 var clientLib = {

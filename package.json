@@ -15,7 +15,8 @@
     "moment": "*",
     "redis": "*",
     "redis-url": "0.1.0",
-    "node-ironio": "*"
+    "node-ironio": "*",
+    "twit": "*"
   },
   "devDependencies": {
     "mocha": "*",

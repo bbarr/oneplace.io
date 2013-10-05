@@ -18,20 +18,18 @@ var flexResponse = (function() {
 
 module.exports = function(app) {
 
-  app.get('/things', requireClientKey, function(req, res) {
+  app.get('/resources', requireClientKey, function(req, res) {
 
     var source = req.param('source');
     var ids = req.param('ids');
     var props = req.param('props');
     var response = flexResponse(res);
+    var composing = ids.map(function(id) { return composer.compose(req.user, source, id, props); });
 
-    var builds = ids.map(function(id) {
-      return composer.compose(req.user, source, id, props);
-    });
-
-    rsvp.all(builds).then(function(composites) {
-      response(null, composites);
+    rsvp.all(composing).then(function(resources) {
+      response(null, resources);
     }, function(error) {
+      console.log('error', error);
       response(error);
     });
   });
@@ -40,7 +38,7 @@ module.exports = function(app) {
     client.create(req.body, flexResponse(res));
   });
 
-  app.get('/client/verified/:verifyCode', requireClientKey, function(req, res) {
+  app.get('/client/verify/:verifyCode', requireClientKey, function(req, res) {
     client.verify(req.user, req.param('verifyCode'), flexResponse(res));
   });
 
@@ -51,5 +49,4 @@ module.exports = function(app) {
   app.patch('/client', requireClientKey, function(req, res) {
     client.update(req.user, req.body, flexResponse(res));
   });
-
 };

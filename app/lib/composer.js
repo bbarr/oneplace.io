@@ -1,127 +1,90 @@
 var _ = require('lodash');
-var apis = require('../apis/index');
+var adapters = require('../adapters/index');
 var cache = require('./cache');
-var places = require('./places');
+var resources = require('./places');
 var references = require('./references');
 var rsvp = require('rsvp');
 var moment = require('moment');
 
 module.exports = {
 
-  failedPromise: function() {
-    return new rsvp.Promise(function(res, rej) { rej(); });
+  isResolved: function(resource, props) {
+    return _.isEmpty(_.difference(props, _.keys(resource.data)));
   },
 
-  freshen: function(place) {
+  prepareResource: function(resource, props) {
+    var clone = _.clone(resource);
     var now = moment();
-    return _.object(_.reject(_.pairs(place), function(pair) {
-      if (pair[1] && pair[1].expires) {
-        if (moment(pair[1].expires).isBefore(now)) {
-          return true;
+    _.forEach(clone.meta, function(v, k) {
+      if (moment(v.expires).isBefore(now) || props.indexOf(k) < 0) {
+        delete clone.data[k];
+        delete clone.meta[k];
+      }
+    });
+    return clone;
+  },
+
+  finishResource: function(resource) {
+    var finished = this.withCacheSummary(resource);
+    resources.save(finished); // side-effect
+    return finished;
+  },
+
+  withCacheSummary: function(resource) {
+    var clone = _.clone(resource);
+    var expiries = _.keys(clone.data) .map(function(key) { 
+      return clone.meta[key].expires; 
+    });
+    function digits(str) { return str ? str.replace(/\D/g, '') : Infinity }
+    var cacheSummary = expiries.reduce(function(earliest, expiry) { return digits(expiry) < digits(earliest) ? expiry : earliest; });
+    clone.cacheSummary = cacheSummary;
+    return clone;
+  },
+
+  populate: function(resource, props, adapter, raw) {
+    var clone = _.clone(resource);
+    return _.reduce(adapter.getters, function(resource, getter, name) {
+      if (!resource.data[name] && props.indexOf(name) > -1) {
+        var gotten = getter(raw);
+        if (typeof gotten !== 'undefined') {
+          resource.data[name] = getter(raw);
+          (resource.meta[name] || (resource.meta[name] = {})).expires = moment().add('days', 2).format();
+          resource.meta[name].source = adapter.name;
         }
-      }
-      return false;
-    }));
+      } 
+      return resource;
+    }, clone);
   },
 
-  composite: function(initial, props) {
+  runAdapters: function(user, resource, props, adapters) {
 
-    var id = initial._id;
-    var refId = initial.referenceId;
-    var composite = _.object(_.reject(_.pairs(_.clone(initial)), function(pair) { return pair[1] !== id && pair[1] !== refId && props.indexOf(pair[0]) === -1; }));
+    var fetched = _.invoke(adapters, 'fetch', user, resource);
 
-    return {
+    return rsvp.all(fetched).then(function(raws) {
 
-      mixin: function(place) {
-        return _.extend(composite, place);
-      },
+      var preparedResource = this.prepareResource(resource, props);
+      var resourceAndAdapters = raws.reduce(function(cache, raw, i) {
+        if (!raw) return cache;
+        return {
+          adapters: cache.adapters.concat([ adapters[i] ]),
+          resource: this.populate(cache.resource, props, adapters[i], raw)
+        }
+      }.bind(this), { resource: preparedResource, adapters: [] });
 
-      isResolved: function() {
-        return _.isEmpty(_.difference(props, _.keys(composite)));
-      },
-
-      updateCacheSummary: function() {
-
-        var expiries = _.keys(composite)
-          .map(function(key) { 
-            return composite[key].expires; 
-          });
-
-        function digits(str) { return str ? str.replace(/\D/g, '') : Infinity }
-        var cacheSummary = expiries.reduce(function(earliest, expiry) { return digits(expiry) < digits(earliest) ? expiry : earliest; });
-
-        this.mixin({ cacheSummary: cacheSummary });
-      },
-
-      value: function(fin) {
-        if (fin) this.updateCacheSummary();
-        return composite;
+      var adaptersRun = resourceAndAdapters.adapters;
+      var leftoverAdapters = _.difference(adapters, adaptersRun);
+      if (!this.isResolved(preparedResource, props) && leftoverAdapters && adaptersRun.length > 0) {
+        return this.runAdapters(user, preparedResource, props, leftoverAdapters);
+      } else {
+        return this.finishResource(preparedResource);
       }
-    }
-  },
-
-  compose: function(config) {
-
-    var initialPlace = _.find(config.apis, function(pair) { return pair[0] === config.source })[1].populate(config, config.place, config.sourcePlace);
-    var apisWithoutSource = _.reject(config.apis, function(pair) { return pair[0] === config.source; });
-
-    return new rsvp.Promise(function(resolve, reject) {
-
-      var composite = this.composite(this.freshen(initialPlace), config.props);
-
-      // done if just needed the source API, or was fully cached
-      if (composite.isResolved()) {
-        return resolve(composite.value(true));
-      };
-
-      // now try all the APIs, resolving ASAP when the props are fulfilled
-      var now = Date.now();
-      if (!apisWithoutSource.length) {
-        var result = composite.value(true);
-        return resolve(result);
-      }
-
-      var fetches = apisWithoutSource.map(function(pair) { 
-        return pair[1].fetch(config, config.references[pair[0]])
-          .then(function(place) {
-            composite.mixin(pair[1].populate(config, composite.value(), place))
-            if (composite.isResolved()) {
-              resolve(composite.value(true));
-            }
-            return place;
-          }.bind(this));
-      }, this);
-
-      // we couldnt fullfil the props with the API's available, just return what we've got
-      rsvp.all(fetches).then(function(places) {
-        resolve(composite.value(true));
-      }, function(e) {
-        resolve(composite.value(true));
-      });
     }.bind(this));
   },
 
-  usableApis: function(user) {
-    return _.object(_.filter(_.pairs(apis), function(pair) { return user.keys[pair[0]]; }));
-  },
-
-  compose: function(user, source, sourceId, props) {
-
-    var usableApis = this.usableApis(user);
-
-    var sourceApi = usableApis[config.source];
-    if (!sourceApi) return this.failedPromise();
-    
-    var fetchingThing = sourceApi.fetch(sourceId);
-
-    var makingReferences = fetchingThing.then(function(thing) {
-      return this.makeReferences(thing);
-    }.bind(this));
-
-    var populatingThing = makingReferences.then(function(references) {
-      return this.populate(thing, props, references);
-    }.bind(this));
-
-    return populatingThing;
+  compose: function(user, adapterName, id, props) {
+    return resources.findOrCreate(user, adapterName, id)
+      .then(function(resource) {
+        return this.runAdapters(user, resource, props, _.values(adapters));
+      }.bind(this));
   }
 }

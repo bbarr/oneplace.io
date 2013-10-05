@@ -5,8 +5,9 @@ function name(file) {
 
 module.exports = require("fs")
   .readdirSync(__dirname)
-  .filter(function(file) { return file.indexOf('.api') > -1; })
+  .filter(function(file) { return file.indexOf('.adapter') > -1; })
   .reduce(function(files, file) {
-    files[name(file)] = require("./" + file); 
+    var fileObj = files[name(file)] = require("./" + file); 
+    fileObj.name = name(file);
     return files;
   }, {});

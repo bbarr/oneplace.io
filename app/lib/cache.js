@@ -16,9 +16,8 @@ module.exports = {
 
   get: function(key) {
     return new rsvp.Promise(function(resolve, reject) {
-      console.log('CACHE GETTING: ', key)
       client.get(key, function(e, val) {
-        console.log('CACHE GOT: ', val)
+        if (!e) console.log('GOT FROM CACHE: ', key, val);
         e ? resolve() : resolve(JSON.parse(val));
       });
     });

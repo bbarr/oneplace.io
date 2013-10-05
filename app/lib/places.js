@@ -7,17 +7,20 @@ var collection = db.collection('places');
 
 module.exports = {
   
-  findOrCreate: function(config) {
-    return this.find(config)
-      .then(null, function(error) {
-        return this.create(config);
-      }.bind(this));
+  findOrCreate: function(user, adapterName, id) {
+    return new rsvp.Promise(function(res, rej) {
+      this.find(user, adapterName, id)
+        .then(res, function(error) {
+          this.create(user, adapterName, id).then(res);
+        }.bind(this));
+    }.bind(this));
   },
 
-  find: function(config) {
+  find: function(user, adapterName, id) {
     return new rsvp.Promise(function(resolve, reject) {
       return collection(function(coll) {
-        var query = config.references ? { referenceId: config.references._id } : { _id: new mongo.ObjectID(config.id) };
+        var query = {}; 
+        query['refs.' + adapterName] = id;
         coll.find(query).nextObject(function(e, doc) {
           return doc ? resolve(doc) : reject(e);
         });
@@ -25,23 +28,25 @@ module.exports = {
     });
   },
 
-  create: function(config) {
+  create: function(user, adapterName, id) {
     return rsvp.Promise(function(resolve, reject) {
       collection(function(coll) {
-        coll.insert({ referenceId: config.references._id }, { safe: true }, function(e, docs) {
+        var doc = { refs: {}, data: {}, meta: {} };
+        doc.refs[adapterName] = id;
+        coll.insert(doc, { safe: true }, function(e, docs) {
           e ? reject(e) : resolve(docs[0]);
         }); 
       });
     });
   },
 
-  save: function(config, place) {
+  save: function(resource) {
     return rsvp.Promise(function(resolve, reject) {
       collection(function(coll) {
-        var oid = new mongo.ObjectID(place._id.toString());
-        coll.update({ _id: oid }, { $set: place }, { safe: true }, function(e, doc) {
-          e ? reject(e) : resolve(/^\d+$/.test(doc) ? place : doc);
-        });
+        var oid = new mongo.ObjectID(resource._id.toString());
+        var clonedResource = _.clone(resource);
+        delete clonedResource._id;
+        coll.update({ _id: oid }, { $set: clonedResource }, function() {});
       });
     });
   }
